@@ -1,6 +1,7 @@
 import tensorflow as tf
 
 
+#업로드 테스트용 주석
 class AutoEncoder:
     def __init__(self):
         self.encoder = None
