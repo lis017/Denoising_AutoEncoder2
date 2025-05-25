@@ -3,4 +3,5 @@
   <component name="Black">
     <option name="sdkName" value="tf2_12" />
   </component>
+  <component name="ProjectRootManager" version="2" project-jdk-name="tf2_12" project-jdk-type="Python SDK" />
 </project>
