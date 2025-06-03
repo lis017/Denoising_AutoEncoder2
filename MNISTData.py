@@ -1,5 +1,6 @@
 import tensorflow as tf
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 class MNISTData:
@@ -187,3 +188,13 @@ class MNISTData:
             plt.xlabel(label_list[i])
 
         plt.show()
+
+
+
+    # 노이즈 추가. 내가 따로 추가한 함수임.(과제1)
+    @staticmethod
+    def add_noise(x_data, noise_factor=0.5):
+        # 0.5 확률로 각 픽셀을 0으로 만듦
+        mask = np.random.binomial(1, 1 - noise_factor, x_data.shape)
+        noisy_x = x_data * mask
+        return noisy_x
