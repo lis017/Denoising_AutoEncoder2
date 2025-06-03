@@ -1,56 +1,53 @@
-import tensorflow as tf
-from MNISTData import MNISTData
-from AutoEncoder import AutoEncoder
 import numpy as np
+import matplotlib.pyplot as plt
+from AutoEncoder import AutoEncoder
+from MNISTData import MNISTData
 
-if __name__ == "__main__":
-    print("Hi. I am an AutoEncoder Tester.")
-    batch_size = 32
-    num_epochs = 5
+# 1. AutoEncoder 모델 불러오기
+autoencoder = AutoEncoder()
+autoencoder.build_model()  # ✅ 이 줄을 꼭 추가해야 함!
+autoencoder.load_weights('./model/ae_model.weights.h5')
 
-    data_loader = MNISTData()
-    data_loader.load_data()
-    x_train = data_loader.x_train
-    x_test = data_loader.x_test
-    y_test = data_loader.y_test
-    input_output_dim = data_loader.in_out_dim
+# 2. MNIST 데이터 로딩
+data_loader = MNISTData()
+_, (x_test, y_test) = data_loader.get_data()  # ✅ 이제 정상 작동
 
-    auto_encoder = AutoEncoder()
-    auto_encoder.build_model()
-    load_path = "./model/ae_model.weights.h5"
-    print("load model weights from %s" % load_path)
-    auto_encoder.load_weights(load_path)
+# 3. 테스트 데이터 중 1000개 선택 (no noise)
+x_selected = x_test[:1000]
+y_selected = y_test[:1000]
 
-    # (1) 1000개 원본 테스트 이미지 중 각 class별 평균 latent vector 구하기
-    num_sample = 1000
-    x_test_sample = x_test[:num_sample]  # 노이즈 없음 (원본)
-    y_test_sample = y_test[:num_sample]
+# 4. code 벡터 얻기
+codes = autoencoder.encoder.predict(x_selected)
 
-    # Encoder를 통과시켜 latent vector 얻기
-    latent_vecs = auto_encoder.encoder.predict(x_test_sample)
-    print("latent_vecs shape:", latent_vecs.shape)  # (1000, latent_dim)
+# 5. 숫자별 평균 및 표준편차 계산
+class_codes = {i: [] for i in range(10)}
+for code, label in zip(codes, y_selected):
+    class_codes[label].append(code)
 
-    # 평균을 위한 준비
-    num_classes = 10
-    latent_dim = latent_vecs.shape[1]
-    avg_codes = np.zeros((num_classes, latent_dim))
-    count_per_class = np.zeros(num_classes)
+class_avg = {}
+class_std = {}
+for i in range(10):
+    code_vectors = np.array(class_codes[i])
+    class_avg[i] = np.mean(code_vectors, axis=0)
+    class_std[i] = np.std(code_vectors, axis=0)
 
-    for i in range(num_sample):
-        label = y_test_sample[i]
-        avg_codes[label] += latent_vecs[i]
-        count_per_class[label] += 1
+# 6. 각 숫자별로 5개의 새로운 코드 생성
+generated_images = []
+for i in range(10):
+    avg = class_avg[i]
+    std = class_std[i]
+    for _ in range(5):
+        rand = np.random.uniform(-1, 1, size=avg.shape)
+        new_code = avg + std * rand
+        generated_image = autoencoder.decoder.predict(np.array([new_code]))[0]
+        generated_images.append(generated_image)
 
-    # 평균 계산
-    for i in range(num_classes):
-        if count_per_class[i] > 0:
-            avg_codes[i] /= count_per_class[i]
-
-    # (2) 평균 latent vector를 Decoder에 넣어 이미지 생성
-    avg_code_tensor = tf.convert_to_tensor(avg_codes, dtype=tf.float32)
-    reconst_from_avg = auto_encoder.decoder.predict(avg_code_tensor)
-
-    # 이미지 출력용 reshape
-    reconst_images = reconst_from_avg.reshape(num_classes, data_loader.width, data_loader.height)
-    label_list = list(range(10))
-    MNISTData.print_10_images(reconst_images, label_list)
+# 7. 결과 시각화
+plt.figure(figsize=(10, 5))
+for i, img in enumerate(generated_images):
+    plt.subplot(10, 5, i + 1)
+    plt.imshow(img.reshape(data_loader.width, data_loader.height), cmap='gray')
+    plt.axis('off')
+plt.suptitle('Generated Images using Avg ± Std * rand')
+plt.tight_layout()
+plt.show()

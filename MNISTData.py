@@ -198,3 +198,9 @@ class MNISTData:
         mask = np.random.binomial(1, 1 - noise_factor, x_data.shape)
         noisy_x = x_data * mask
         return noisy_x
+
+
+    def get_data(self):
+        # 데이터를 먼저 불러옵니다
+        self.load_data()
+        return (self.x_train, self.y_train), (self.x_test, self.y_test)

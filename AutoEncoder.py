@@ -1,7 +1,6 @@
 import tensorflow as tf
 
-
-#업로드 테스트용 주석
+# 업로드 테스트용 주석
 class AutoEncoder:
     def __init__(self):
         self.encoder = None
@@ -14,8 +13,10 @@ class AutoEncoder:
         self.decoder_hidden_layers = [200, 200]
         self.code_dim = 32
 
-    def build_model(self):
+        # 모델을 생성자에서 바로 빌드
+        self.build_model()
 
+    def build_model(self):
         # Build Encoder
         encoder_input = tf.keras.layers.Input(shape=(self.input_output_dim,), dtype=tf.float32)
         encoder_h_layer = encoder_input
@@ -28,7 +29,6 @@ class AutoEncoder:
         )(encoder_h_layer)
         self.encoder = tf.keras.models.Model(inputs=encoder_input, outputs=code)
 
-        # def build_model() 의 내용이어서
         # Build Decoder
         decoder_input = tf.keras.layers.Input(shape=(self.code_dim,), dtype=tf.float32)
         decoder_h_layer = decoder_input
@@ -41,9 +41,11 @@ class AutoEncoder:
         )(decoder_h_layer)
         self.decoder = tf.keras.models.Model(inputs=decoder_input, outputs=decoder_output)
 
-        # En-Decoder
+        # En-Decoder 연결
         vae_output = self.decoder(code)
         self.en_decoder = tf.keras.models.Model(inputs=encoder_input, outputs=vae_output)
+
+        # 컴파일
         optimizer_alg = tf.keras.optimizers.Adam(learning_rate=0.001)
         mse = tf.keras.losses.mse
         self.en_decoder.compile(optimizer=optimizer_alg, loss=mse)
